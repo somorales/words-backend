@@ -25,10 +25,11 @@ const wordSchema = new Schema({
     type: String,
     required: [true, "Lenguage is required."],
   },
-  user_id: {
-    type: ObjectId,
-    required: [true, "user_id is required."],
-  },
+
+  /* user_id: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },*/
 });
 
 const Word = model("Word", wordSchema);
