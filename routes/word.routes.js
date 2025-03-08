@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const Word = require("../models/Word.model");
+const verifyToken = require("../middlewares/auth.middlewares");
 
 //Crear una nueva palabra
 
-router.post("/", async (req, res, next) => {
+router.post("/", verifyToken, async (req, res, next) => {
   try {
     const response = await Word.create({
       word: req.body.word,
@@ -12,6 +13,7 @@ router.post("/", async (req, res, next) => {
       translation: req.body.translation,
       sentences: req.body.sentences,
       language: req.body.language,
+      userId: req.payload._id,
     });
 
     res.status(201).json(response);
@@ -23,9 +25,9 @@ router.post("/", async (req, res, next) => {
 
 //ver todas las palabras
 
-router.get("/", async (req, res, next) => {
+router.get("/", verifyToken, async (req, res, next) => {
   try {
-    const allWords = await Word.find();
+    const allWords = await Word.find({ userId: req.payload._id });
 
     res.status(200).json(allWords);
   } catch (error) {
@@ -36,10 +38,14 @@ router.get("/", async (req, res, next) => {
 
 //ver una palabra
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", verifyToken, async (req, res, next) => {
   try {
     const word = await Word.findById(req.params.id);
-    res.status(200).json(word);
+    if (req.payload._id === word.userId) {
+      res.status(200).json(word);
+    } else {
+      res.status(401).json({ message: "not authorized" });
+    }
   } catch (error) {
     console.log(error);
     next(error);
@@ -47,11 +53,15 @@ router.get("/:id", async (req, res, next) => {
 });
 
 //eliminar una palabra
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", verifyToken, async (req, res, next) => {
   try {
-    const response = await Word.findByIdAndDelete(req.params.id);
+    const word = await Word.findByIdAndDelete(req.params.id);
 
-    res.status(204).send();
+    if (req.payload._id === word.userId) {
+      res.status(200).json(word);
+    } else {
+      res.status(401).json({ message: "not authorized" });
+    }
   } catch (error) {
     console.log(error);
     next(error);
@@ -59,13 +69,16 @@ router.delete("/:id", async (req, res, next) => {
 });
 
 //editar una palabra
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", verifyToken, async (req, res, next) => {
   try {
     const updateWord = await Word.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-
-    res.status(200).json(updateWord);
+    if (req.payload._id === updateWord.userId) {
+      res.status(200).json(updateWord);
+    } else {
+      res.status(401).json({ message: "not authorized" });
+    }
   } catch (error) {
     console.log(error);
     next(error);
