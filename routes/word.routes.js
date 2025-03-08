@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Word = require("../models/Word.model");
-const verifyToken = require("../middlewares/auth.middlewares");
+const { verifyToken } = require("../middlewares/auth.middlewares");
 
 //Crear una nueva palabra
 
