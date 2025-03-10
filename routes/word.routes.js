@@ -27,7 +27,15 @@ router.post("/", verifyToken, async (req, res, next) => {
 
 router.get("/", verifyToken, async (req, res, next) => {
   try {
-    const allWords = await Word.find({ userId: req.payload._id });
+    let filtros;
+
+    if (req.query.word === undefined) {
+      filtros = {};
+    } else {
+      filtros = { word: { $regex: req.query.word, $options: "i" } };
+    }
+
+    const allWords = await Word.find({ userId: req.payload._id }, filtros);
 
     res.status(200).json(allWords);
   } catch (error) {
