@@ -68,9 +68,13 @@ router.get("/:id", verifyToken, async (req, res, next) => {
 //eliminar una palabra
 router.delete("/:id", verifyToken, async (req, res, next) => {
   try {
-    const word = await Word.findByIdAndDelete(req.params.id);
+    const word = await Word.findById(req.params.id);
+    console.log(req.payload._id, word.userId);
 
-    if (req.payload._id === word.userId) {
+    if (!word) {
+      res.status(404).json({ message: "word not found" });
+    } else if (req.payload._id === word.userId.toString()) {
+      await Word.findByIdAndDelete(req.params.id);
       res.status(200).json(word);
     } else {
       res.status(401).json({ message: "not authorized" });
