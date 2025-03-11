@@ -29,13 +29,18 @@ router.get("/", verifyToken, async (req, res, next) => {
   try {
     let filtros;
 
+    console.log(req.query.word);
+
     if (req.query.word === undefined) {
-      filtros = {};
+      filtros = { userId: req.payload._id };
     } else {
-      filtros = { word: { $regex: req.query.word, $options: "i" } };
+      filtros = {
+        userId: req.payload._id,
+        word: { $regex: req.query.word, $options: "i" },
+      };
     }
 
-    const allWords = await Word.find({ userId: req.payload._id }, filtros);
+    const allWords = await Word.find(filtros);
 
     res.status(200).json(allWords);
   } catch (error) {
