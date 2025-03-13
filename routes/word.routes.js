@@ -23,13 +23,13 @@ router.post("/", verifyToken, async (req, res, next) => {
   }
 });
 
-//ver todas las palabras
+// tamaño de una página
+const PAGE_SIZE = 3;
 
+//ver todas las palabras
 router.get("/", verifyToken, async (req, res, next) => {
   try {
     let filtros;
-
-    console.log(req.query.word);
 
     if (req.query.word === undefined) {
       filtros = { userId: req.payload._id };
@@ -40,9 +40,37 @@ router.get("/", verifyToken, async (req, res, next) => {
       };
     }
 
-    const allWords = await Word.find(filtros);
+    if (req.query.cursor) {
+      console.log(req.query.cursor);
+      filtros.createdAt = { $lt: new Date(parseInt(req.query.cursor)) };
+    }
 
-    res.status(200).json(allWords);
+    const results = await Word.find(filtros)
+      .sort({ createdAt: -1 })
+      .limit(PAGE_SIZE + 1)
+      .exec();
+    // hay más resultados?
+    let hasMore = false;
+
+    if (results.length > PAGE_SIZE) {
+      hasMore = true;
+    }
+
+    // removemos el elemento extra
+    let allWords = results;
+
+    if (hasMore === true) {
+      allWords = allWords.slice(0, PAGE_SIZE);
+    }
+
+    // definimos el valor del cursor para la siguiente invocación a éste servicio
+    let nextCursor = null;
+
+    if (allWords.length > 0 && hasMore) {
+      let lastWord = allWords[allWords.length - 1];
+      nextCursor = lastWord.createdAt.getTime().toString();
+    }
+    res.status(200).json({ allWords, hasMore, nextCursor });
   } catch (error) {
     console.log(error);
     next(error);
@@ -54,7 +82,7 @@ router.get("/", verifyToken, async (req, res, next) => {
 router.get("/:id", verifyToken, async (req, res, next) => {
   try {
     const word = await Word.findById(req.params.id);
-    if (req.payload._id === word.userId) {
+    if (req.payload._id === word.userId.toString()) {
       res.status(200).json(word);
     } else {
       res.status(401).json({ message: "not authorized" });
@@ -91,7 +119,7 @@ router.put("/:id", verifyToken, async (req, res, next) => {
     const updateWord = await Word.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (req.payload._id === updateWord.userId) {
+    if (req.payload._id === updateWord.userId.toString()) {
       res.status(200).json(updateWord);
     } else {
       res.status(401).json({ message: "not authorized" });
