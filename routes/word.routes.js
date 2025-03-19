@@ -70,6 +70,7 @@ router.get("/", verifyToken, async (req, res, next) => {
       let lastWord = allWords[allWords.length - 1];
       nextCursor = lastWord.createdAt.getTime().toString();
     }
+
     res.status(200).json({ allWords, hasMore, nextCursor });
   } catch (error) {
     console.log(error);
