@@ -41,7 +41,6 @@ router.get("/", verifyToken, async (req, res, next) => {
     }
 
     if (req.query.cursor) {
-      console.log(req.query.cursor);
       filtros.createdAt = { $lt: new Date(parseInt(req.query.cursor)) };
     }
 
@@ -71,7 +70,29 @@ router.get("/", verifyToken, async (req, res, next) => {
       nextCursor = lastWord.createdAt.getTime().toString();
     }
 
-    res.status(200).json({ allWords, hasMore, nextCursor });
+    // determinamos si hay elementos previos
+    let hasPrev = false;
+    const prevElements = await Word.find({
+      ...filtros,
+      createdAt: { $gt: allWords[0].createdAt },
+    })
+      .sort({ createdAt: -1 })
+      .limit(PAGE_SIZE + 1)
+      .exec();
+
+    let prevCursor = null;
+
+    if (prevElements.length > 0) {
+      hasPrev = true;
+    }
+
+    if (prevElements.length > PAGE_SIZE) {
+      prevCursor = prevElements[0].createdAt.getTime().toString();
+    }
+
+    res
+      .status(200)
+      .json({ allWords, hasMore, nextCursor, hasPrev, prevCursor });
   } catch (error) {
     console.log(error);
     next(error);
