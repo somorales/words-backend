@@ -1,4 +1,4 @@
-# Project Name
+# Lexi
 
 This is the backend project for the [Lexi app]().
 
